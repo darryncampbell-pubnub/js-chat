@@ -93,3 +93,31 @@ input[type=submit] {
   margin-left: 10px;
   width: auto;
 }
+
+.typingIndicator {
+  align-self: flex-end;
+  padding-right: 10px;
+}
+
+article{
+  width:100%;
+}
+
+.messageContent {
+  font-size: large;
+}
+
+.readReceipts {
+  float: right;
+  padding-right: 10px;
+}
+
+.messageReactions {
+  display:block;
+  padding-right: 10px;
+}
+
+button {
+  border-radius: 5px;
+  margin-right: 10px;
+}
