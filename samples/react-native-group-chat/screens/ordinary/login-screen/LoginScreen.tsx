@@ -28,7 +28,17 @@ export function LoginScreen({ navigation }: StackScreenProps<RootStackParamList,
         </Text>
         <Gap value={96} />
 
-        <TextInput label="Choose a User ID / Name" value={name} onChangeText={setName} />
+        <TextInput
+          label="Choose a User ID / Name"
+          value={name}
+          onChangeText={(text) => {
+            if (text.includes(" ")) {
+              setName(text.trim())
+            } else {
+              setName(text)
+            }
+          }}
+        />
         <Gap value={96} />
 
         <Button size="md" onPress={() => navigation.replace("mainRoutes", { name })}>

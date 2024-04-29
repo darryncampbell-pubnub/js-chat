@@ -322,7 +322,7 @@ export function ChatScreen({}: StackScreenProps<HomeStackParamList, "Chat">) {
               <MaterialIcons
                 name="camera-alt"
                 size={20}
-                style={{ marginRight: 8, cursor: "pointer" }}
+                style={{ marginRight: 8, cursor: "pointer", display: "none" }}
                 color={colors.neutral600}
               />
             </label>

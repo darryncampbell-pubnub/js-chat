@@ -1,0 +1,5 @@
+{
+  "features": [
+    "Launch the chat app on this page, then click 'Open demo in new window' and launch it there also, with a different user ID.  Exchange messages and see the typing indicator.  Start threads, quote messages & pin those messages to the chat.  Create a group with multiple participants - you can see the presence of users when you initiate a chat"
+  ]
+}
