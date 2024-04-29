@@ -11,6 +11,7 @@ import {
   EventType,
   EmitEventParams,
   GenericEventParams,
+  MessageDTOParams,
 } from "../types"
 import { Message } from "./message"
 import { Event } from "./event"
@@ -21,6 +22,8 @@ import { MessageElementsUtils } from "../message-elements-utils"
 import { getErrorProxiedEntity, ErrorLogger } from "../error-logging"
 import { cyrb53a } from "../hash"
 import { uuidv4 } from "../uuidv4"
+import { defaultEditActionName, defaultDeleteActionName } from "../default-values"
+import { AccessManager } from "../access-manager"
 
 export type ChatConfig = {
   saveDebugLog: boolean
@@ -39,6 +42,13 @@ export type ChatConfig = {
     [key in ChannelType]: number
   }
   errorLogger?: ErrorLoggerImplementation
+  customPayloads: {
+    getMessagePublishBody?: (m: TextMessageContent, channelId: string) => any
+    getMessageResponseBody?: (m: MessageDTOParams) => TextMessageContent
+    editMessageActionName?: string
+    deleteMessageActionName?: string
+  }
+  authKey?: string
 }
 
 type ChatConstructor = Partial<ChatConfig> & PubNub.PubnubConfig
@@ -57,6 +67,12 @@ export class Chat {
   private subscriptions: { [channel: string]: Set<string> }
   /** @internal */
   errorLogger: ErrorLogger
+  /** @internal */
+  readonly editMessageActionName: string
+  /** @internal */
+  readonly deleteMessageActionName: string
+  /** @internal */
+  readonly accessManager: AccessManager
 
   /** @internal */
   private constructor(params: ChatConstructor) {
@@ -69,10 +85,14 @@ export class Chat {
       rateLimitFactor,
       rateLimitPerChannel,
       errorLogger,
+      customPayloads,
       ...pubnubConfig
     } = params
 
     this.errorLogger = new ErrorLogger(errorLogger)
+    this.editMessageActionName = customPayloads?.editMessageActionName || defaultEditActionName
+    this.deleteMessageActionName =
+      customPayloads?.deleteMessageActionName || defaultDeleteActionName
 
     try {
       if (storeUserActivityInterval && storeUserActivityInterval < 60000) {
@@ -116,7 +136,14 @@ export class Chat {
         public: 0,
         unknown: 0,
       },
-    }
+      customPayloads: {
+        getMessagePublishBody: customPayloads?.getMessagePublishBody,
+        getMessageResponseBody: customPayloads?.getMessageResponseBody,
+      },
+      authKey: pubnubConfig.authKey,
+    } as ChatConfig
+
+    this.accessManager = new AccessManager(this)
   }
 
   static async init(params: ChatConstructor) {
@@ -165,7 +192,20 @@ export class Chat {
 
   /* @internal */
   signal(params: { channel: string; message: any }) {
-    return this.sdk.signal(params)
+    const canISendSignal = this.accessManager.canI({
+      permission: "write",
+      resourceName: params.channel,
+      resourceType: "channels",
+    })
+    if (canISendSignal) {
+      return this.sdk.signal(params)
+    }
+
+    throw new Error(
+      `You tried to send a signal containing message: ${JSON.stringify(
+        params.message
+      )} to channel: ${params.channel} but PubNub Access Manager prevented you from doing so.`
+    )
   }
 
   /**
@@ -659,7 +699,7 @@ export class Chat {
       originalPublisher: message.userId,
       originalChannelId: message.channelId,
     }
-    this.publish({ message: message.content, channel, meta })
+    return this.publish({ message: message.content, channel, meta })
   }
 
   /** @internal */
