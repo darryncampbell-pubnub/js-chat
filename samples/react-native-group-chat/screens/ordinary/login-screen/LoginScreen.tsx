@@ -7,7 +7,7 @@ import { RootStackParamList } from "../../../types"
 import ChatIcon from "../../../assets/chat.svg"
 
 export function LoginScreen({ navigation }: StackScreenProps<RootStackParamList, "login">) {
-  const [name, setName] = useState("test-user-" + Math.floor(Math.random() * 999))
+  const [name, setName] = useState("test-user-" + Math.floor(Math.random() * 99999))
 
   return (
     <KeyboardAvoidingView
